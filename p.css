@@ -1,0 +1,72 @@
+html,body{
+    margin: 0px;
+    font-family: sans-serif;
+}
+::selection{
+    background-color: #ed1b2e;
+    color: white;
+}
+
+.md-container{
+    margin: 35px;
+    width: 800px;
+    height: 440px;
+    border: 1px solid #ccc;
+}
+.toolbar{
+    width: 100%;
+    height: 40px;
+    border-bottom: 1px solid #ccc;
+    box-sizing: border-box;
+}
+.toolbar>button{
+    border: none;
+    padding: 0px 15px;
+    outline: none;
+    min-width: 38px;
+    background-color: transparent;
+    height: 40px;
+    border-right: 1px solid #ccc;
+    border-bottom: 1px solid #ccc;
+    float: left;
+}
+.toolbar>button:hover{
+    cursor: pointer;    
+}
+.toolbar>button.active{
+    background-color: #eee;
+}
+.toolbar>.color-panel{
+    height: 40px;
+    padding: 0px 15px;
+    line-height: 40px;
+    float: left;
+    border-right: 1px solid #ccc;
+}
+.toolbar>.color-panel>input{
+    outline: none;
+    width: 50px;
+}
+.toolbar>.color-panel>button{
+    height: 19px;
+    line-height: 19px;
+    font-size: 8px;
+    border: 1px solid #ccc;
+    box-sizing: border-box;
+    background-color: white;
+    margin: 11px 5px 9px 5px;
+    padding: 0px 10px;
+    box-sizing: border-box;
+    float: right;
+    outline: none;
+    cursor: pointer;
+}
+textarea{
+    width: 100%;
+    height: 400px;
+    border: none;
+    outline: none;
+    box-sizing: border-box;
+    padding: 20px;
+    font-size: 20px;
+}

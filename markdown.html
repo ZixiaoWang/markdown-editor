@@ -1,0 +1,249 @@
+<!doctype html>
+<html>
+    <head>
+        <title>MDE</title>
+        <meta charset="UTF-8">
+        <link rel="stylesheet" href="./p.css">
+    </head>
+    <body>
+        <div class="md-container">
+            <div class="toolbar">
+                <button id="heading" onclick="addHeading()">H</button>
+                <button id="bold" onclick="addBold()"><b>B</b></button>
+                <button id="italic" onclick="addItalic()"><i>I</i></button>
+                <button id="ul" onclick="addUl()">ul</button>
+                <button id="ol" onclick="addOl()">ol</button>
+                <button id="image">Image</button>
+                <button id="table">Table</button>
+                <!--<button style="color:red;" id="color">A</button>-->
+                <div class="color-panel">
+                    <span style="color:red;" id="sampleText">A</span>
+                    # <input type="text" maxlength="6" id="colorCode">
+                    <button onclick="removeColor()">Clear</button>
+                    <button onclick="addColor()">Apply</button>
+                </div>
+                <button style="float:right; border-left:1px solid #ccc; border-right:none;">View</button>
+            </div>
+            <textarea name="mde" id="mde" cols="30" rows="10"></textarea>
+        </div>
+    </body>
+    <script>
+        var textarea = document.getElementById('mde');
+        var colorCode = document.getElementById('colorCode');
+        var $id = function(_id){
+            return document.getElementById(_id);
+        }
+        
+        var getSelectedPosition = function(){
+            return {
+                start: textarea.selectionStart,
+                end: textarea.selectionEnd
+            }
+        }
+        
+        var getRowPosition = function(){
+            if(textarea.selectionStart == textarea.selectionEnd){
+                return {
+                    start: textarea.value.substring(0, textarea.selectionStart).lastIndexOf('\n') + 1,
+                    end:(function(){
+                        if(textarea.value.substring(textarea.selectionEnd).indexOf('\n') == -1){
+                            return textarea.value.length;
+                        }else{
+                            return textarea.value.substring(textarea.selectionEnd).indexOf('\n') + textarea.selectionEnd;
+                        }
+                    })()
+                }
+            }else{
+                return {
+                    start: textarea.value.substring(0, textarea.selectionStart).lastIndexOf('\n') + 1,
+                    end: textarea.value.substring(textarea.selectionStart).indexOf('\n') + textarea.selectionStart - 1
+                }
+            }
+        }
+        
+        var getNeededContent = function(){
+            let highLight = {
+                pre: textarea.value.substring(0, getSelectedPosition().start),
+                pro: textarea.value.substring(getSelectedPosition().end),
+                mid: textarea.value.substring(getSelectedPosition().start, getSelectedPosition().end)
+            };
+            
+            let row = {
+                pre: getRowPosition().start == 0 ? '' : textarea.value.substring(0, getRowPosition().start),
+                pro: textarea.value.substring(getRowPosition().end),
+                mid: textarea.value.substring(getRowPosition().start, getRowPosition().end)
+            }
+            
+            return {
+                highLight: highLight,
+                row: row
+            }
+        }
+        
+        var getRowStart = function(startPoint){
+            if(textarea.value.substring(0, startPoint).indexOf('\n') == -1){
+                return 0;
+            }else{
+                return textarea.value.substring(0, startPoint).indexOf('\n') + 1;
+            }
+        }
+        
+        var getRowEnd = function(endPoint){
+            if(textarea.value.substring(endPoint).indexOf('\n') == -1){
+                return textarea.value.length;
+            }else{
+                return textarea.value.substring(endPoint).indexOf('\n') + textarea.selectionEnd;
+            }
+        }
+        
+        // Function 
+        var addHeading = function(){
+            let _ = getNeededContent().row;
+            let s = getSelectedPosition().start;
+            if(_.mid.indexOf('###### ') == 0){
+                textarea.value = _.pre + _.mid.replace('###### ', '') + _.pro;
+            }else if(_.mid.indexOf('#') == 0){
+                textarea.value = _.pre + '#' + _.mid + _.pro;
+            }else{
+                textarea.value = _.pre + '# ' + _.mid + _.pro;
+            }
+            textarea.focus();
+            textarea.setSelectionRange(s, s);
+        }
+        
+        var addBold = function(){
+            let _ = getNeededContent().highLight;
+            let s = getSelectedPosition().start;
+            let e = getSelectedPosition().end;
+            
+            if( /(.*)\_\_/.test(_.pre) || /\_\_(.*)/.test(_.pro) ){
+                _.pre = _.pre.replace(/^(.*)\_\_$/, '$1');
+                _.pro = _.pro.replace(/^\_\_(.*)$/, '$1');
+                textarea.value = _.pre + _.mid + _.pro;
+                textarea.focus();
+                textarea.setSelectionRange(s-2, e-2);
+            }else{
+                textarea.value = _.pre + '__' + _.mid + '__' + _.pro;
+                textarea.focus();
+                textarea.setSelectionRange(s+2, e+2);
+            }
+        }
+        
+        var addItalic = function(){
+            let _ = getNeededContent().highLight;
+            let s = getSelectedPosition().start;
+            let e = getSelectedPosition().end;
+            
+            if( /^(.*)\*$/.test(_.pre) && /^\*(.*)$/.test(_.pro) ){
+                _.pre = _.pre.replace(/^(.*)\*$/, '$1');
+                _.pro = _.pro.replace(/^\*(.*)$/, '$1');
+                textarea.value = _.pre + _.mid + _.pro;
+                textarea.focus();
+                textarea.setSelectionRange(s-1, e-1);
+            }else{
+                textarea.value = _.pre + '*' + _.mid + '*' + _.pro;
+                textarea.focus();
+                textarea.setSelectionRange(s+1, e+1);
+            }
+        }
+        
+        var addUl = function(){
+            let hls = getSelectedPosition().start;
+            let hle = getSelectedPosition().end;
+            let s = getRowStart(hls);
+            let e = getRowEnd(hle);
+            
+            //去掉星星
+            if(/\* /.test( textarea.value.substring(s, e) )){
+                textarea.value = 
+                    textarea.value.substring(0, s) + 
+                    textarea.value.substring(s, e).replace(/\* /g, '') +
+                    textarea.value.substring(e);
+                textarea.focus();
+                textarea.setSelectionRange(e,e);
+            //加星星
+            }else{
+                textarea.value = 
+                    textarea.value.substring(0, s) + '* ' +
+                    textarea.value.substring(s, e).replace(/\n/g, '\n* ') +
+                    textarea.value.substring(e);
+                textarea.focus();
+                textarea.setSelectionRange(e,e);
+            }
+        }
+        
+        var removeColor = function(){
+            let hls = getSelectedPosition().start;
+            let hle = getSelectedPosition().end;
+            let s = getRowStart(hls);
+            let e = getRowEnd(hle);
+            
+            if( /<span style="color:(.*);">|<\/span>/.test(textarea.value.substring(s,e)) ){
+                textarea.value = 
+                    textarea.value.substring(0, s) + 
+                    textarea.value.substring(s, e).replace(/<span style="color:(.*);">|<\/span>/g, '') +
+                    textarea.value.substring(e);
+                textarea.focus();
+                textarea.setSelectionRange(e,e);
+            }
+        }
+        
+        var addColor = function(){
+            let hls = getSelectedPosition().start;
+            let hle = getSelectedPosition().end;
+            let s = getRowStart(hls);
+            let e = getRowEnd(hle);
+            let c = '#' + $id('colorCode').value;
+            
+            removeColor();
+            if( /[\_\_|\*|\* |\d\. ]/.test(textarea.value.substring(s, e)) ){
+                alert('Color setting can only apply to one nodeElement');
+            }else{
+                textarea.value = 
+                    textarea.value.substring(0, hls) + '<span style="color:' + c + ';">' + 
+                    textarea.value.substring(hls, hle) + '</span>' +
+                    textarea.value.substring(hle);
+                textarea.focus();
+                textarea.setSelectionRange(hle,hle);
+            }
+        }
+        
+        // Event
+        function changeSampleTextColor(){
+            console.log(1)
+            $id('sampleText').style.color = '#' + $id('colorCode').value;
+        }
+        
+        function update(){
+            let _row = getNeededContent().row;
+            let _hl = getNeededContent().highLight;
+            
+            // Heading
+            if(_row.mid.indexOf('#') == 0){
+                $id('heading').classList.add('active');
+            }else{
+                $id('heading').classList.remove('active');
+            }
+            
+            // Bold
+            if( /^(.*)\_\_$/.test(_hl.pre) && /^\_\_(.*)$/.test(_hl.pro) ){
+                $id('bold').classList.add('active');
+            }else{
+                $id('bold').classList.remove('active');
+            }
+            
+            // Italic
+            if( /^(.*)\*$/.test(_hl.pre) && /^\*(.*)$/.test(_hl.pro) ){
+                $id('italic').classList.add('active');
+            }else{
+                $id('italic').classList.remove('active');
+            }
+        }
+        textarea.addEventListener('click', update);
+        textarea.addEventListener('keydown', update);
+        textarea.addEventListener('select', update);
+        textarea.addEventListener('change', update);
+        
+        colorCode.addEventListener('keyup', changeSampleTextColor);
+    </script>
+</html>
