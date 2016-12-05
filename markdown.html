@@ -13,23 +13,27 @@
                 <button id="italic" onclick="addItalic()"><i>I</i></button>
                 <button id="ul" onclick="addUl()">ul</button>
                 <button id="ol" onclick="addOl()">ol</button>
-                <button id="image">Image</button>
-                <button id="table">Table</button>
+                <button id="image" onclick="addImage()">Image</button>
+                <button id="table" onclick="convertTable()">Table</button>
                 <!--<button style="color:red;" id="color">A</button>-->
                 <div class="color-panel">
                     <span style="color:red;" id="sampleText">A</span>
-                    # <input type="text" maxlength="6" id="colorCode">
+                    <input type="text" id="colorCode">
                     <button onclick="removeColor()">Clear</button>
                     <button onclick="addColor()">Apply</button>
                 </div>
-                <button style="float:right; border-left:1px solid #ccc; border-right:none;">View</button>
+                <button onclick="preview()" class="preview-btn" id="previewBtn">View</button>
             </div>
-            <textarea name="mde" id="mde" cols="30" rows="10"></textarea>
+            <textarea name="mde" id="mde" cols="30" rows="10" class="show"></textarea>
+            <div id="preview" class="hide"></div>
         </div>
     </body>
+    <!--<script src="./markdown.min.js"></script>-->
+    <script src="./mdParser.js"></script>
     <script>
         var textarea = document.getElementById('mde');
         var colorCode = document.getElementById('colorCode');
+        var previewBlock = document.getElementById('preview');
         var $id = function(_id){
             return document.getElementById(_id);
         }
@@ -84,7 +88,7 @@
             if(textarea.value.substring(0, startPoint).indexOf('\n') == -1){
                 return 0;
             }else{
-                return textarea.value.substring(0, startPoint).indexOf('\n') + 1;
+                return textarea.value.substring(0, startPoint).lastIndexOf('\n') + 1;
             }
         }
         
@@ -116,9 +120,9 @@
             let s = getSelectedPosition().start;
             let e = getSelectedPosition().end;
             
-            if( /(.*)\_\_/.test(_.pre) || /\_\_(.*)/.test(_.pro) ){
-                _.pre = _.pre.replace(/^(.*)\_\_$/, '$1');
-                _.pro = _.pro.replace(/^\_\_(.*)$/, '$1');
+            if( /(.*)\_\_$/.test(_.pre) && /^\_\_(.*)/.test(_.pro) ){
+                _.pre = _.pre.replace(/(.*)\_\_$/, '$1');
+                _.pro = _.pro.replace(/^\_\_(.*)/, '$1');
                 textarea.value = _.pre + _.mid + _.pro;
                 textarea.focus();
                 textarea.setSelectionRange(s-2, e-2);
@@ -134,7 +138,7 @@
             let s = getSelectedPosition().start;
             let e = getSelectedPosition().end;
             
-            if( /^(.*)\*$/.test(_.pre) && /^\*(.*)$/.test(_.pro) ){
+            if( /(.*)\*$/.test(_.pre) && /^\*(.*)/.test(_.pro) ){
                 _.pre = _.pre.replace(/^(.*)\*$/, '$1');
                 _.pro = _.pro.replace(/^\*(.*)$/, '$1');
                 textarea.value = _.pre + _.mid + _.pro;
@@ -154,21 +158,91 @@
             let e = getRowEnd(hle);
             
             //去掉星星
-            if(/\* /.test( textarea.value.substring(s, e) )){
+            if(/\+ /.test( textarea.value.substring(s, e) )){
                 textarea.value = 
                     textarea.value.substring(0, s) + 
-                    textarea.value.substring(s, e).replace(/\* /g, '') +
+                    textarea.value.substring(s, e).replace(/\+ /g, '') +
                     textarea.value.substring(e);
                 textarea.focus();
                 textarea.setSelectionRange(e,e);
             //加星星
             }else{
                 textarea.value = 
-                    textarea.value.substring(0, s) + '* ' +
-                    textarea.value.substring(s, e).replace(/\n/g, '\n* ') +
+                    textarea.value.substring(0, s) + '+ ' +
+                    textarea.value.substring(s, e).replace(/\n/g, '\n+ ') +
                     textarea.value.substring(e);
                 textarea.focus();
                 textarea.setSelectionRange(e,e);
+            }
+        }
+        
+        var addOl = function(){
+            let hls = getSelectedPosition().start;
+            let hle = getSelectedPosition().end;
+            let s = getRowStart(hls);
+            let e = getRowEnd(hle);
+            
+            let olContent = textarea.value.substring(s, e);
+            // 去掉序列
+            if(/\d\.\s(.*)/.test(olContent)){
+                olContent = olContent.replace(/\d\.\s/g, '');
+                textarea.value = 
+                    textarea.value.substring(0, s) + 
+                    olContent +
+                    textarea.value.substring(e);
+                textarea.focus();
+                textarea.setSelectionRange(e,e);
+            // 增加序列
+            }else{
+                let olList = textarea.value.substring(s, e).split('\n');
+                olList.forEach(function(item, key){
+                    olList[key] = (key+1) + '. ' + item;
+                });
+                textarea.value = 
+                        textarea.value.substring(0, s) + 
+                        olList.join('\n') +
+                        textarea.value.substring(e);
+                textarea.focus();
+                textarea.setSelectionRange(e,e);
+            }
+        }
+        
+        var convertTable = function(){
+            let s = getNeededContent().highLight.pre;
+            let m = getNeededContent().highLight.mid;
+            let e = getNeededContent().highLight.pro;
+            
+            if (m.length == 0){
+                let tableTemplate = '\n' +
+                '| title | title | title |\n' +
+                '| --- | --- | --- |\n' +
+                '| cell | cell | cell |\n';
+                textarea.value = 
+                    s + tableTemplate + e;
+            }else{
+                let content = m.replace(/\t/g, ' | ');
+                content = content.replace(/\n/g, '|\n|');
+                textarea.value = 
+                    s + '\n| ' + content + ' |\n' + e;
+            }
+        }
+        
+        var addImage = function(){
+            let hls = getSelectedPosition().start;
+            let s = getNeededContent().highLight.pre;
+            let m = getNeededContent().highLight.mid;
+            let e = getNeededContent().highLight.pro;
+            
+            if(m.length == 0){
+                textarea.value = 
+                    s + '![](http://)' + e;
+                textarea.focus();
+                textarea.setSelectionRange(hls+2, hls+2);
+            }else{
+                textarea.value = 
+                    s + '![' + m + '](http://)' + e;
+                textarea.focus();
+                textarea.setSelectionRange(hls+2, hls+2);
             }
         }
         
@@ -189,34 +263,34 @@
         }
         
         var addColor = function(){
-            let hls = getSelectedPosition().start;
-            let hle = getSelectedPosition().end;
-            let s = getRowStart(hls);
-            let e = getRowEnd(hle);
-            let c = '#' + $id('colorCode').value;
+            let s = getNeededContent().highLight.pre;
+            let m = getNeededContent().highLight.mid;
+            let e = getNeededContent().highLight.pro;
+            let c = $id('colorCode').value;
             
             removeColor();
-            if( /[\_\_|\*|\* |\d\. ]/.test(textarea.value.substring(s, e)) ){
+            if( /(\d\. )|(\+ )|(\_\_)|(\*)/.test(m) ){
                 alert('Color setting can only apply to one nodeElement');
             }else{
                 textarea.value = 
-                    textarea.value.substring(0, hls) + '<span style="color:' + c + ';">' + 
-                    textarea.value.substring(hls, hle) + '</span>' +
-                    textarea.value.substring(hle);
+                    s + '<span style="color:' + c + ';">' + 
+                    m + '</span>' +
+                    e;
                 textarea.focus();
-                textarea.setSelectionRange(hle,hle);
+                textarea.setSelectionRange(e,e);
             }
         }
         
         // Event
         function changeSampleTextColor(){
             console.log(1)
-            $id('sampleText').style.color = '#' + $id('colorCode').value;
+            $id('sampleText').style.color = $id('colorCode').value;
         }
         
         function update(){
             let _row = getNeededContent().row;
             let _hl = getNeededContent().highLight;
+            window.v = textarea.value;
             
             // Heading
             if(_row.mid.indexOf('#') == 0){
@@ -245,5 +319,16 @@
         textarea.addEventListener('change', update);
         
         colorCode.addEventListener('keyup', changeSampleTextColor);
+        
+        var preview = function(){
+            // previewBlock.innerHTML = markdown.toHTML(textarea.value, 'Maruku');
+            previewBlock.innerHTML = markdown.parse(textarea.value);
+            
+            textarea.classList.toggle('show');
+            textarea.classList.toggle('hide');
+            previewBlock.classList.toggle('show');
+            previewBlock.classList.toggle('hide');
+            $id('previewBtn').classList.toggle('active');
+        }
     </script>
 </html>

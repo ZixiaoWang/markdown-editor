@@ -1,0 +1,33 @@
+<!DOCTYPE HTML>
+<html>
+    <head>
+        <title>Principal Clients API testing</title>
+        
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="stylesheet" href="./p.css">
+    </head>
+    <body>
+        <textarea name="n" id="n" cols="30" rows="10"></textarea>
+        <div id="d"></div>
+    </body>
+    <script
+    src="https://code.jquery.com/jquery-3.1.1.min.js"
+    integrity="sha256-hVVnYaiADRTO2PzUGmuLJr8BLUSjGIZsDYGmIJLv2b8="
+    crossorigin="anonymous">
+    </script>
+    <script>
+        var data = {
+            name:'jacky',
+            age:25,
+            nest:{
+                a:'apple',
+                b:'pear',
+                c:[
+                    {aa:'aa', bb:'bb'}
+                ]
+            }
+        };
+        document.getElementById('n').value = JSON.stringify(data, null, '\t');
+    </script>
+</html>
